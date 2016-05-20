@@ -24,6 +24,14 @@
             </intent-filter>
         </activity>
 
+        <!--<activity android:name=".PictureActivity">
+            <intent-filter>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>-->
+
+
         <service android:name="org.fourthline.cling.android.AndroidUpnpServiceImpl"/>
 
         <!-- Or a custom service configuration, also use this class in bindService()!

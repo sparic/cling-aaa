@@ -343,6 +343,9 @@ public class LightActivity extends Activity implements PropertyChangeListener {
 
      public void onEventMainThread(FileEvent file){
          try {
+             //显示图片
+
+             //保存图片
              saveBitmapToFile(file.file,"/sdcard/namecard/");
          } catch (IOException e) {
              e.printStackTrace();

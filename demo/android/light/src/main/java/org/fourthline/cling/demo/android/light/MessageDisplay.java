@@ -2,6 +2,9 @@ package org.fourthline.cling.demo.android.light;
 
 import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import de.greenrobot.event.EventBus;
 import org.fourthline.cling.binding.annotations.*;
 
@@ -48,9 +51,33 @@ public class MessageDisplay {
         getPropertyChangeSupport().firePropertyChange("message", statusOldValue, message);
     }
 
-    @UpnpAction(name = "SendPic")
-    public void receivePic(@UpnpInputArgument(name = "pic") File pic) {
-        EventBus.getDefault().post(new FileEvent(pic));
+    /**
+     * string转成bitmap
+     *
+     * @param st
+     */
+    public static Bitmap convertStringToIcon(String st)
+    {
+        // OutputStream out;
+        Bitmap bitmap = null;
+        try
+        {
+            // out = new FileOutputStream("/sdcard/aa.jpg");
+            byte[] bitmapArray;
+            bitmapArray = Base64.decode(st, Base64.DEFAULT);
+            bitmap = BitmapFactory.decodeByteArray(bitmapArray, 0, bitmapArray.length);
+            // bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            return bitmap;
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+
+    @UpnpAction(name = "SetPic")
+    public void setPic(@UpnpInputArgument(name = "pic") String pic) {
+        EventBus.getDefault().post(new FileEvent(convertStringToIcon(pic)));
     }
 
     @UpnpAction(out = @UpnpOutputArgument(name = "RetHelloValue"))

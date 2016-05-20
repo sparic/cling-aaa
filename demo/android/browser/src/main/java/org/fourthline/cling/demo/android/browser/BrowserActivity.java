@@ -15,22 +15,22 @@
 
 package org.fourthline.cling.demo.android.browser;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.*;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.android.FixedAndroidLogHandler;
@@ -56,6 +56,8 @@ import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.RouterException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -71,6 +73,7 @@ import java.util.logging.Logger;
  */
 // DOC:CLASS
 public class BrowserActivity extends ListActivity {
+//public class BrowserActivity extends Activity {
 
     // DOC:CLASS
     // DOC:SERVICE_BINDING
@@ -79,6 +82,12 @@ public class BrowserActivity extends ListActivity {
     private BrowseRegistryListener registryListener = new BrowseRegistryListener();
 
     private AndroidUpnpService upnpService;
+
+    private ImageView imgShow=null;
+
+    private TextView imgPath=null;
+
+    Service service = null;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -109,7 +118,8 @@ public class BrowserActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        imgPath=(TextView) findViewById(R.id.img_path);
+        imgShow=(ImageView) findViewById(R.id.imgShow);
         // Fix the logging integration between java.util.logging and Android internal logging
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
             new FixedAndroidLogHandler()
@@ -196,64 +206,123 @@ public class BrowserActivity extends ListActivity {
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        ActionArgument[] a = null;
-        AlertDialog dialog = new AlertDialog.Builder(this).create();
-        dialog.setTitle(R.string.deviceDetails);
+        //打开选择图片
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        intent.putExtra("crop", true);
+        intent.putExtra("return-data", true);
+        startActivityForResult(intent, 2);
+
+//        ActionArgument[] a = null;
+//        AlertDialog dialog = new AlertDialog.Builder(this).create();
+//        dialog.setTitle(R.string.deviceDetails);
         final DeviceDisplay deviceDisplay = (DeviceDisplay)l.getItemAtPosition(position);
-        dialog.setMessage(deviceDisplay.getDetailsMessage());
-        dialog.setButton(
-                getString(R.string.OK),
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-
-                    }
-                }
-        );
-        dialog.show();
-//        upnpService.getControlPoint().search(new UDNHeader(deviceDisplay.getDevice().getIdentity().getUdn()));
-
-        Service service = deviceDisplay.getDevice().findService(new UDAServiceId("MessageDisplay"));
-        Action[] acts = service.getActions();
-        for (Action ac : acts) {
-            System.out.println(ac.getName());
-        }
-        Action action = service.getAction("SetHello");
-
-        ActionInvocation setTargetInvocation = new ActionInvocation(action);
-
-        setTargetInvocation.setInput("UserName", "fuyuda"); // Can throw InvalidValueException
-
-// Alternative:
+//        dialog.setMessage(deviceDisplay.getDetailsMessage());
+//        dialog.setButton(
+//                getString(R.string.OK),
+//                new DialogInterface.OnClickListener() {
+//                    public void onClick(DialogInterface dialog, int which) {
 //
-// setTargetInvocation.setInput(
-//         new ActionArgumentValue(
-//                 action.getInputArgument("NewTargetValue"),
-//                 true
-//         )
-// );
-
-        ActionCallback setTargetCallback = new ActionCallback(setTargetInvocation) {
-
-            @Override
-            public void success(ActionInvocation invocation) {
-                ActionArgumentValue[] output = invocation.getOutput();
-//                assertEquals(output.length, 0);
-            }
-
-            @Override
-            public void failure(ActionInvocation invocation,
-                                UpnpResponse operation,
-                                String defaultMsg) {
-                System.err.println(defaultMsg);
-            }
-        };
-
-        upnpService.getControlPoint().execute(setTargetCallback);
-
-        TextView textView = (TextView) dialog.findViewById(android.R.id.message);
-        textView.setTextSize(12);
-        super.onListItemClick(l, v, position, id);
+//                    }
+//                }
+//        );
+//        dialog.show();
+////        upnpService.getControlPoint().search(new UDNHeader(deviceDisplay.getDevice().getIdentity().getUdn()));
+//        Service[] serv = deviceDisplay.getDevice().findServices();
+//        for (Service s : serv) {
+//            System.out.println(s.getServiceId());
+//        }
+        service = deviceDisplay.getDevice().findService(new UDAServiceId("MessageDisplay"));
+//        Action[] acts = service.getActions();
+//        for (Action ac : acts) {
+//            System.out.println(ac.getName());
+//        }
+//        Action action = service.getAction("SetHello");
+//
+//        ActionInvocation setTargetInvocation = new ActionInvocation(action);
+//
+//        setTargetInvocation.setInput("UserName", "fuyuda"); // Can throw InvalidValueException
+//
+//// Alternative:
+////
+//// setTargetInvocation.setInput(
+////         new ActionArgumentValue(
+////                 action.getInputArgument("NewTargetValue"),
+////                 true
+////         )
+//// );
+//
+//        ActionCallback setTargetCallback = new ActionCallback(setTargetInvocation) {
+//
+//            @Override
+//            public void success(ActionInvocation invocation) {
+//                ActionArgumentValue[] output = invocation.getOutput();
+////                assertEquals(output.length, 0);
+//            }
+//
+//            @Override
+//            public void failure(ActionInvocation invocation,
+//                                UpnpResponse operation,
+//                                String defaultMsg) {
+//                System.err.println(defaultMsg);
+//            }
+//        };
+//
+//        upnpService.getControlPoint().execute(setTargetCallback);
+//
+//        TextView textView = (TextView) dialog.findViewById(android.R.id.message);
+//        textView.setTextSize(12);
+//        super.onListItemClick(l, v, position, id);
         }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != RESULT_OK) {        //此处的 RESULT_OK 是系统自定义得一个常量
+            Log.e("TAG->onresult", "ActivityResult resultCode error");
+            return;
+        }
+        Bitmap bm = null;
+
+        //外界的程序访问ContentProvider所提供数据 可以通过ContentResolver接口
+
+        ContentResolver resolver = getContentResolver();
+
+        //此处的用于判断接收的Activity是不是你想要的那个
+        if (requestCode == 2) {
+            try {
+//                Action action = service.getAction("SetHello");
+//                ActionInvocation setTargetInvocation = new ActionInvocation(action);
+//                setTargetInvocation.setInput("UserName", "fuyuda");
+
+
+                Uri originalUri = data.getData();        //获得图片的uri
+                bm = MediaStore.Images.Media.getBitmap(resolver, originalUri);
+                Action action = service.getAction("SetPic");
+                ActionInvocation setTargetInvocation = new ActionInvocation(action);
+                setTargetInvocation.setInput("picture", convertIconToString(bm));
+
+
+
+
+                /*//显得到bitmap图片
+                imgShow.setImageBitmap(bm);
+                //    这里开始的第二部分，获取图片的路径：
+                String[] proj = {MediaStore.Images.Media.DATA};
+                //好像是android多媒体数据库的封装接口，具体的看Android文档
+                Cursor cursor = getContentResolver().query(originalUri, proj, null, null, null);
+                //按我个人理解 这个是获得用户选择的图片的索引值
+                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                //将光标移至开头 ，这个很重要，不小心很容易引起越界
+                cursor.moveToFirst();
+                //最后根据索引值获取图片路径
+                String path = cursor.getString(column_index);
+                imgPath.setText(path);*/
+            } catch (Exception e) {
+                Log.e("TAG-->Error", e.toString());
+            }
+        }
+    }
+
     protected class BrowseRegistryListener extends DefaultRegistryListener {
 
         /* Discovery performance optimization for very slow Android devices! */
@@ -373,6 +442,21 @@ public class BrowserActivity extends ListActivity {
             // Display a little star while the device is being loaded (see performance optimization earlier)
             return device.isFullyHydrated() ? name : name + " *";
         }
+    }
+
+    /**
+     * 图片转成string
+     *
+     * @param bitmap
+     * @return
+     */
+    public static String convertIconToString(Bitmap bitmap)
+    {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();// outputstream
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+        byte[] appicon = baos.toByteArray();// 转为byte数组
+        return Base64.encodeToString(appicon, Base64.DEFAULT);
+
     }
     // DOC:CLASS_END
     // ...
