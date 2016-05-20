@@ -21,6 +21,7 @@ import android.content.*;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.MediaStore;
@@ -53,12 +54,10 @@ import org.fourthline.cling.model.types.UDN;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.RouterException;
 
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -115,7 +114,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
             upnpService = null;
         }
     };
-
+    ImageView imageView;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -128,7 +127,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         // DOC:LOGGING
         setContentView(R.layout.light);
 
-
+        imageView = (ImageView) findViewById(R.id.light_imageview);
 
 //        view = ;
         textView = (TextView) findViewById(R.id.light_textview);
@@ -228,7 +227,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
     protected void setLightbulb(final boolean on) {
         runOnUiThread(new Runnable() {
             public void run() {
-                ImageView imageView = (ImageView) findViewById(R.id.light_imageview);
+
                 imageView.setImageResource(on ? R.drawable.light_on : R.drawable.light_off);
                 // You can NOT externalize this color into /res/values/colors.xml. Go on, try it!
                 imageView.setBackgroundColor(on ? Color.parseColor("#9EC942") : Color.WHITE);
@@ -337,16 +336,22 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         super.onStop();
     }
 
-//    public void onEventMainThread(MessageEvent event){
-//        Toast.makeText(LightActivity.this, event.message, Toast.LENGTH_SHORT).show();
-//    }
+    public void onEventMainThread(MessageEvent event){
+        Toast.makeText(LightActivity.this, event.message, Toast.LENGTH_SHORT).show();
+    }
 
      public void onEventMainThread(FileEvent file){
          try {
              //显示图片
-
-             //保存图片
-             saveBitmapToFile(file.file,"/sdcard/namecard/");
+             Toast.makeText(LightActivity.this, file.toString(), Toast.LENGTH_SHORT).show();
+             Bitmap bitmap = file.getFile();
+             imageView.setImageBitmap(bitmap);
+             //保存图片 + "/image"
+//             String path= Environment.getExternalStorageDirectory().getAbsolutePath() + "/image" + File.separator + "women" + ".jpg";
+             File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+             File file2 = new File(path, "DemoPicture.jpg");
+             Log.e("getExternalStora",file2.toString());
+             saveMyBitmap(bitmap,file2);
          } catch (IOException e) {
              e.printStackTrace();
          }
@@ -386,5 +391,56 @@ public class LightActivity extends Activity implements PropertyChangeListener {
             }
         }
     }
+
+//    public void saveMyBitmap(Bitmap mBitmap,String bitName) throws IOException{
+//        String path = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()+File.separator;
+//        File f = new File( path,"women.jpg");
+//        Log.e("saveMyBitmap",f.toString());
+//        FileOutputStream fOut = null;
+//        try {
+//            fOut = new FileOutputStream(f);
+//
+//            Log.e("saveMyBitmapfOut=",fOut+"");
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+//        mBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fOut);
+//        try {
+//            fOut.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        try {
+//            fOut.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    public static boolean saveMyBitmap(Bitmap bitmap, File file) throws IOException{
+        if (bitmap == null)
+            return false;
+
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.flush();
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return false;
+    }
+
+
 }
 // DOC:CLASS_END

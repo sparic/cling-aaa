@@ -241,7 +241,7 @@ public class BrowserActivity extends ListActivity {
 //
 //        ActionInvocation setTargetInvocation = new ActionInvocation(action);
 //
-//        setTargetInvocation.setInput("UserName", "fuyuda"); // Can throw InvalidValueException
+//        setTargetInvocation.setInput(new ActionArgumentValue(action.getInputArgument("UserName"), "fuyuda")); // Can throw InvalidValueException
 //
 //// Alternative:
 ////
@@ -269,7 +269,7 @@ public class BrowserActivity extends ListActivity {
 //        };
 //
 //        upnpService.getControlPoint().execute(setTargetCallback);
-//
+
 //        TextView textView = (TextView) dialog.findViewById(android.R.id.message);
 //        textView.setTextSize(12);
 //        super.onListItemClick(l, v, position, id);
@@ -299,9 +299,25 @@ public class BrowserActivity extends ListActivity {
                 bm = MediaStore.Images.Media.getBitmap(resolver, originalUri);
                 Action action = service.getAction("SetPic");
                 ActionInvocation setTargetInvocation = new ActionInvocation(action);
-                setTargetInvocation.setInput("picture", convertIconToString(bm));
+                setTargetInvocation.setInput("pic", convertIconToString(bm));
 
+                ActionCallback setTargetCallback = new ActionCallback(setTargetInvocation) {
 
+                    @Override
+                    public void success(ActionInvocation invocation) {
+                        ActionArgumentValue[] output = invocation.getOutput();
+//                assertEquals(output.length, 0);
+                    }
+
+                    @Override
+                    public void failure(ActionInvocation invocation,
+                                        UpnpResponse operation,
+                                        String defaultMsg) {
+                        System.err.println(defaultMsg);
+                    }
+                };
+
+                upnpService.getControlPoint().execute(setTargetCallback);
 
 
                 /*//显得到bitmap图片
@@ -450,12 +466,13 @@ public class BrowserActivity extends ListActivity {
      * @param bitmap
      * @return
      */
-    public static String convertIconToString(Bitmap bitmap)
+    public static byte[] convertIconToString(Bitmap bitmap)
     {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();// outputstream
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
         byte[] appicon = baos.toByteArray();// 转为byte数组
-        return Base64.encodeToString(appicon, Base64.DEFAULT);
+        return appicon;
+//        return Base64.encodeToString(appicon, Base64.DEFAULT);
 
     }
     // DOC:CLASS_END

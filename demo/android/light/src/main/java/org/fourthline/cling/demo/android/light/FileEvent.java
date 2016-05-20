@@ -13,4 +13,8 @@ public class FileEvent {
     public FileEvent(Bitmap file) {
         this.file = file;
     }
+
+    public Bitmap getFile() {
+        return file;
+    }
 }

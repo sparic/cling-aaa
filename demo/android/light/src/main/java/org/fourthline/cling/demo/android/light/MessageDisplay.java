@@ -36,6 +36,9 @@ public class MessageDisplay {
     @UpnpStateVariable(defaultValue = "")
     private String message = null;
 
+    @UpnpStateVariable(defaultValue = "")
+    private byte[] pic = null;
+
     @UpnpAction
     public void setHello(@UpnpInputArgument(name = "UserName") String userName) {
         String targetOldValue = hello;
@@ -71,13 +74,14 @@ public class MessageDisplay {
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             return null;
         }
     }
 
     @UpnpAction(name = "SetPic")
-    public void setPic(@UpnpInputArgument(name = "pic") String pic) {
-        EventBus.getDefault().post(new FileEvent(convertStringToIcon(pic)));
+    public void setPic(@UpnpInputArgument(name = "pic") byte[] pic) {
+        EventBus.getDefault().post(new FileEvent(Bytes2Bimap(pic)));
     }
 
     @UpnpAction(out = @UpnpOutputArgument(name = "RetHelloValue"))
@@ -88,5 +92,13 @@ public class MessageDisplay {
     @UpnpAction(out = @UpnpOutputArgument(name = "ResultStatus"))
     public String getMessage() {
         return message;
+    }
+
+    public Bitmap Bytes2Bimap(byte[] b) {
+        if (b.length != 0) {
+            return BitmapFactory.decodeByteArray(b, 0, b.length);
+        } else {
+            return null;
+        }
     }
 }
