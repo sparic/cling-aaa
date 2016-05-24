@@ -20,6 +20,7 @@ import android.app.AlertDialog;
 import android.content.*;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.IBinder;
@@ -245,7 +246,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
 
         DeviceDetails details =
                 new DeviceDetails(
-                        "Message UPnP Ray",
+                        "Message UPnP Ray-Che",
                         new ManufacturerDetails("ACME"),
                         new ModelDetails("AndroidMessager", "to Say Hello info.", "v1")
                 );
@@ -336,37 +337,76 @@ public class LightActivity extends Activity implements PropertyChangeListener {
         super.onStop();
     }
 
+    /**
+     * 传文本
+     显示     * @param event
+     */
     public void onEventMainThread(MessageEvent event){
         Toast.makeText(LightActivity.this, event.message, Toast.LENGTH_SHORT).show();
     }
 
      public void onEventMainThread(FileEvent file){
-         try {
              //显示图片
-             Toast.makeText(LightActivity.this, file.toString(), Toast.LENGTH_SHORT).show();
-             Bitmap bitmap = file.getFile();
-             imageView.setImageBitmap(bitmap);
+//             Toast.makeText(LightActivity.this, file.toString(), Toast.LENGTH_SHORT).show();
+//             imageView.setImageBitmap(bitmap);
+
+             //保存音乐
+            byte2File(file.getFile(), Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music" + File.separator, "demoMusic.mp3");
+         Intent intent = new Intent(LightActivity.this,TestMusicActivity.class);
+         String path =  Environment.getExternalStorageDirectory().getAbsolutePath() + "/Music" + File.separator+"demoMusic.mp3";
+         intent.putExtra("mpa",path);
+         startActivity(intent);
+
+
              //保存图片 + "/image"
 //             String path= Environment.getExternalStorageDirectory().getAbsolutePath() + "/image" + File.separator + "women" + ".jpg";
-             File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-             File file2 = new File(path, "DemoPicture.jpg");
-             Log.e("getExternalStora",file2.toString());
-             saveMyBitmap(bitmap,file2);
-         } catch (IOException e) {
-             e.printStackTrace();
-         }
+//             File path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+//             File file2 = new File(path, "DemoPicture.jpg");
+//             Log.e("getExternalStora",file2.toString());
      }
+
+    public InputStream getInputStream(FileInputStream fileInput) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024*4];
+        int n = -1;
+        InputStream inputStream = null;
+        try {
+            while ((n=fileInput.read(buffer)) != -1) {
+                baos.write(buffer, 0, n);
+
+            }
+            byte[] byteArray = baos.toByteArray();
+            inputStream = new ByteArrayInputStream(byteArray);
+            return inputStream;
+
+
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     /**
      * Save Bitmap to a file.保存图片到SD卡。
      *
-     * @param bitmap
      * @return error message if the saving is failed. null if the saving is
      *         successful.
      * @throws IOException
      */
-    public static void saveBitmapToFile(Bitmap bitmap, String _file)
-            throws IOException {
+   /* public static void saveBitmapToFile(Bitmap bitmap, String _file) throws IOException {
         BufferedOutputStream os = null;
         try {
             File file = new File(_file);
@@ -390,7 +430,7 @@ public class LightActivity extends Activity implements PropertyChangeListener {
                 }
             }
         }
-    }
+    }*/
 
 //    public void saveMyBitmap(Bitmap mBitmap,String bitName) throws IOException{
 //        String path = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()+File.separator;
@@ -417,19 +457,129 @@ public class LightActivity extends Activity implements PropertyChangeListener {
 //        }
 //    }
 
-    public static boolean saveMyBitmap(Bitmap bitmap, File file) throws IOException{
-        if (bitmap == null)
-            return false;
+//    public static boolean saveMyBitmap(Bitmap bitmap, File file) throws IOException{
+//        Log.e("myFirstBitmap",file.toString());
+//        if (bitmap == null)
+//            return false;
+//
+//        FileOutputStream fos = null;
+//        try {
+//            fos = new FileOutputStream(file);
+//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+//            fos.flush();
+//            return true;
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if (fos != null) {
+//                try {
+//                    fos.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        return false;
+//    }
 
-        FileOutputStream fos = null;
+    //将图像保存到SD卡中
+    public void saveMyBitmap(String bitName,Bitmap mBitmap) throws  IOException{
+        File f = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/data" + File.separator + bitName + ".png");
+        Log.e("getExternalStora",f.toString());
         try {
-            fos = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
-            fos.flush();
-            return true;
+            f.createNewFile();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+        }
+        FileOutputStream fOut = null;
+        try {
+            fOut = new FileOutputStream(f);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        mBitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+        try {
+            fOut.flush();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        try {
+            fOut.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 在SD卡上创建文件
+     * @param filePath
+     * @return
+     */
+    public File createSDFile(String filePath){
+        File file=new File(filePath);
+        try {
+            file.createNewFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return file;
+    }
+
+    /**
+     * 将一个inputStream里面的数据写到SD卡中
+     * @param path
+     * @param fileName
+     * @param inputStream
+     * @return
+     */
+    public File writeToSDfromInput(String path,String fileName,InputStream inputStream){
+        //createSDDir(path);
+        File file=createSDFile(path+fileName);
+        OutputStream outStream=null;
+        try {
+            outStream=new FileOutputStream(file);
+            byte[] buffer=new byte[4*1024];
+            while(inputStream.read(buffer)!=-1){
+                outStream.write(buffer);
+            }
+            outStream.flush();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }finally{
+            try {
+                outStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return file;
+    }
+
+    public static void byte2File(byte[] buf, String filePath, String fileName) {
+        BufferedOutputStream bos = null;
+        FileOutputStream fos = null;
+        File file = null;
+        try {
+            File dir = new File(filePath);
+            if (!dir.exists() && dir.isDirectory()) {
+                dir.mkdirs();
+            }
+            file = new File(filePath + File.separator + fileName);
+            fos = new FileOutputStream(file);
+            bos = new BufferedOutputStream(fos);
+            bos.write(buf);
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
+            if (bos != null) {
+                try {
+                    bos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             if (fos != null) {
                 try {
                     fos.close();
@@ -438,9 +588,6 @@ public class LightActivity extends Activity implements PropertyChangeListener {
                 }
             }
         }
-        return false;
     }
-
-
 }
 // DOC:CLASS_END

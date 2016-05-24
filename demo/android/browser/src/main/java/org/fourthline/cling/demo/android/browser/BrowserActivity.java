@@ -21,8 +21,10 @@ import android.app.ListActivity;
 import android.content.*;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.IBinder;
 import android.provider.MediaStore;
 import android.util.Base64;
@@ -56,8 +58,7 @@ import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.RouterException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -89,6 +90,10 @@ public class BrowserActivity extends ListActivity {
 
     Service service = null;
 
+    private Button playButton;
+    private Button stopButton;
+    private MediaPlayer mediaPlayer;
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
@@ -118,8 +123,12 @@ public class BrowserActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        imgPath=(TextView) findViewById(R.id.img_path);
-        imgShow=(ImageView) findViewById(R.id.imgShow);
+//        imgPath=(TextView) findViewById(R.id.img_path);
+//        imgShow=(ImageView) findViewById(R.id.imgShow);
+//        setContentView(R.layout.music);
+
+//        playButton=(Button)findViewById(R.id.playButton);
+//        stopButton=(Button)findViewById(R.id.stopButton);
         // Fix the logging integration between java.util.logging and Android internal logging
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
             new FixedAndroidLogHandler()
@@ -208,11 +217,18 @@ public class BrowserActivity extends ListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         //打开选择图片
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("image/*");
+//        intent.setType("image/*");
+        intent.setType("audio/mp3");
         intent.putExtra("crop", true);
         intent.putExtra("return-data", true);
         startActivityForResult(intent, 2);
 
+        //传音乐
+//        String path = Environment.getExternalStorageDirectory().getAbsolutePath()+"/Music"+ File.separator+"Do What You Do-Cute Is What We Aim For.mp3";
+//        File file = new File(path);
+//        if(file.exists()) {
+//            System.out.println("aaaaaaaaa");
+//        }
 //        ActionArgument[] a = null;
 //        AlertDialog dialog = new AlertDialog.Builder(this).create();
 //        dialog.setTitle(R.string.deviceDetails);
@@ -232,15 +248,16 @@ public class BrowserActivity extends ListActivity {
 //        for (Service s : serv) {
 //            System.out.println(s.getServiceId());
 //        }
+
         service = deviceDisplay.getDevice().findService(new UDAServiceId("MessageDisplay"));
+
 //        Action[] acts = service.getActions();
 //        for (Action ac : acts) {
 //            System.out.println(ac.getName());
 //        }
+
 //        Action action = service.getAction("SetHello");
-//
 //        ActionInvocation setTargetInvocation = new ActionInvocation(action);
-//
 //        setTargetInvocation.setInput(new ActionArgumentValue(action.getInputArgument("UserName"), "fuyuda")); // Can throw InvalidValueException
 //
 //// Alternative:
@@ -251,7 +268,6 @@ public class BrowserActivity extends ListActivity {
 ////                 true
 ////         )
 //// );
-//
 //        ActionCallback setTargetCallback = new ActionCallback(setTargetInvocation) {
 //
 //            @Override
@@ -290,16 +306,23 @@ public class BrowserActivity extends ListActivity {
         //此处的用于判断接收的Activity是不是你想要的那个
         if (requestCode == 2) {
             try {
-//                Action action = service.getAction("SetHello");
-//                ActionInvocation setTargetInvocation = new ActionInvocation(action);
-//                setTargetInvocation.setInput("UserName", "fuyuda");
-
-
-                Uri originalUri = data.getData();        //获得图片的uri
-                bm = MediaStore.Images.Media.getBitmap(resolver, originalUri);
-                Action action = service.getAction("SetPic");
+                /**
+                 * 发送消息
+                 */
+                /*Action action = service.getAction("SetHello");
                 ActionInvocation setTargetInvocation = new ActionInvocation(action);
-                setTargetInvocation.setInput("pic", convertIconToString(bm));
+                setTargetInvocation.setInput("UserName", "fuyuda");*/
+                Uri originalUri = data.getData();        //获得图片的uri
+//                bm = MediaStore.Images.Media.getBitmap(resolver, originalUri);
+
+//                saveMyBitmap("demoPic.jpg",bm);
+
+                String path = Environment.getExternalStorageDirectory().getAbsolutePath()+ "/Music" +File.separator+"Cry on my Shoulder.mp3";
+                File file = new File(path);
+                Action action = service.getAction("SetMusic");
+                ActionInvocation setTargetInvocation = new ActionInvocation(action);
+                setTargetInvocation.setInput("music", File2byte(file));
+
 
                 ActionCallback setTargetCallback = new ActionCallback(setTargetInvocation) {
 
@@ -319,20 +342,6 @@ public class BrowserActivity extends ListActivity {
 
                 upnpService.getControlPoint().execute(setTargetCallback);
 
-
-                /*//显得到bitmap图片
-                imgShow.setImageBitmap(bm);
-                //    这里开始的第二部分，获取图片的路径：
-                String[] proj = {MediaStore.Images.Media.DATA};
-                //好像是android多媒体数据库的封装接口，具体的看Android文档
-                Cursor cursor = getContentResolver().query(originalUri, proj, null, null, null);
-                //按我个人理解 这个是获得用户选择的图片的索引值
-                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                //将光标移至开头 ，这个很重要，不小心很容易引起越界
-                cursor.moveToFirst();
-                //最后根据索引值获取图片路径
-                String path = cursor.getString(column_index);
-                imgPath.setText(path);*/
             } catch (Exception e) {
                 Log.e("TAG-->Error", e.toString());
             }
@@ -475,6 +484,62 @@ public class BrowserActivity extends ListActivity {
 //        return Base64.encodeToString(appicon, Base64.DEFAULT);
 
     }
+
+    //将图像保存到SD卡中
+//    public void saveMyBitmap(String bitName,Bitmap mBitmap){
+//        File f = new File("/sdcard/" + bitName + ".png");
+//        try {
+//            f.createNewFile();
+//        } catch (IOException e) {
+//            // TODO Auto-generated catch block
+//        }
+//        FileOutputStream fOut = null;
+//        try {
+//            fOut = new FileOutputStream(f);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        mBitmap.compress(Bitmap.CompressFormat.PNG, 100, fOut);
+//        try {
+//            fOut.flush();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        try {
+//            fOut.close();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    public static byte[] File2byte(File file)
+    {
+        byte[] buffer = null;
+        try
+        {
+            FileInputStream fis = new FileInputStream(file);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            byte[] b = new byte[1024];
+            int n;
+            while ((n = fis.read(b)) != -1)
+            {
+                bos.write(b, 0, n);
+            }
+            fis.close();
+            bos.close();
+            buffer = bos.toByteArray();
+        }
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+        return buffer;
+    }
+
     // DOC:CLASS_END
     // ...
 }

@@ -9,7 +9,7 @@ import de.greenrobot.event.EventBus;
 import org.fourthline.cling.binding.annotations.*;
 
 import java.beans.PropertyChangeSupport;
-import java.io.File;
+import java.io.*;
 
 /**
  * Created by Ray.Fu on 2016/5/17.
@@ -39,6 +39,9 @@ public class MessageDisplay {
     @UpnpStateVariable(defaultValue = "")
     private byte[] pic = null;
 
+    @UpnpStateVariable(defaultValue = "")
+    private byte[] music = null;
+
     @UpnpAction
     public void setHello(@UpnpInputArgument(name = "UserName") String userName) {
         String targetOldValue = hello;
@@ -59,29 +62,30 @@ public class MessageDisplay {
      *
      * @param st
      */
-    public static Bitmap convertStringToIcon(String st)
-    {
+    public static Bitmap convertStringToIcon(String st) {
         // OutputStream out;
         Bitmap bitmap = null;
-        try
-        {
+        try {
             // out = new FileOutputStream("/sdcard/aa.jpg");
             byte[] bitmapArray;
             bitmapArray = Base64.decode(st, Base64.DEFAULT);
             bitmap = BitmapFactory.decodeByteArray(bitmapArray, 0, bitmapArray.length);
             // bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             return bitmap;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    @UpnpAction(name = "SetPic")
-    public void setPic(@UpnpInputArgument(name = "pic") byte[] pic) {
-        EventBus.getDefault().post(new FileEvent(Bytes2Bimap(pic)));
+//    @UpnpAction(name = "SetPic")
+//    public void setPic(@UpnpInputArgument(name = "pic") byte[] pic) {
+//        EventBus.getDefault().post(new FileEvent(Bytes2Bimap(pic)));
+//    }
+
+    @UpnpAction(name = "SetMusic")
+    public void setMusic(@UpnpInputArgument(name = "music") byte[] music) {
+        EventBus.getDefault().post(new FileEvent(music));
     }
 
     @UpnpAction(out = @UpnpOutputArgument(name = "RetHelloValue"))
